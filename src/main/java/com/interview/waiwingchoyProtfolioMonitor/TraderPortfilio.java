@@ -21,7 +21,6 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
     private final BlockingQueue<Tick> tickQueue = new LinkedBlockingQueue<>();
     private PortfilioPrinterListener portfilioPrinterListener = null;
     private final AtomicLong tickUpdateCount = new AtomicLong(0);
-    private List<Tick> initTicks=null;
 
     public TraderPortfilio(List<SecurityStatic> securityStaticList) {
         this.securityStaticList=securityStaticList;
@@ -53,7 +52,7 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
             try {
                 Tick tick = tickQueue.take();
                 processTick(tick);
-                sendOpenSnapshot(tick, tickUpdateCount.incrementAndGet());
+                sendSnapshot(tick, tickUpdateCount.incrementAndGet());
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -77,16 +76,15 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
         this.portfilioPrinterListener = listener;
     }
 
-    public PortfilioSnapshot createOpenSnapshot(Tick tick, long number) {
-
+    public PortfilioSnapshot createSnapshot(Tick tick, long number) {
         Map<String, SecurityPrice> priceMap = securityPriceMap.values().stream().collect(Collectors.toMap(SecurityPrice::getSymbol, securityPrice -> new SecurityPrice(securityPrice.getSymbol(), securityPrice.getPrice())));
         return new PortfilioSnapshot(number, tick, priceMap, this.securityStaticList);
 
     }
 
-    public void sendOpenSnapshot(Tick tick, long number) {
+    public void sendSnapshot(Tick tick, long number) {
         if (portfilioPrinterListener!=null) {
-            portfilioPrinterListener.receivePrintRequest(createOpenSnapshot(tick, number));
+            portfilioPrinterListener.receivePrintRequest(createSnapshot(tick, number));
         }
     }
 
@@ -102,8 +100,5 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
         if (portfilioPrinterListener!=null) {
             portfilioPrinterListener.receivePrintRequest(createOpenSnapshot(ticks, number));
         }
-    }
-    public void setInitTicks(List<Tick> ticks) {
-        this.initTicks=ticks;
     }
 }

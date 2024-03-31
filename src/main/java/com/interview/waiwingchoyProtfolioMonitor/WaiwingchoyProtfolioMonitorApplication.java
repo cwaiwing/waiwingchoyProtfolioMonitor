@@ -29,7 +29,12 @@ public class WaiwingchoyProtfolioMonitorApplication implements CommandLineRunner
 		this.securityDefinitionRepository=securityDefinitionRepository;
 	}
 	@Override
-	public void run(String... args) throws Exception {
+	public void run(String[] args) throws Exception {
+		System.out.println(args);
+		if (args.length==0) {
+			System.out.println("no portfolio file in the argument");
+			System.exit(0);
+		}
 
 		MarketDataManager marketDataManager = MarketDataManager.getInstance();
 		System.out.println("load file ... "+args[0]);
@@ -49,13 +54,6 @@ public class WaiwingchoyProtfolioMonitorApplication implements CommandLineRunner
 		}
 
 		traderPortfilio.registerPortfilioPrinterRunner(PortfilioPrinterListener.getInstance());
-
-		List<Tick> ticks = new CopyOnWriteArrayList<>();
-		Tick tick1 = new Tick("AAPL", 110.0, 0);
-		Tick tick2 = new Tick("TELSA", 450.0, 0);
-		ticks.add(tick1);
-		ticks.add(tick2);
-		traderPortfilio.setInitTicks(ticks);
 
 		new SimpleAsyncTaskExecutor().execute(traderPortfilio);
 
