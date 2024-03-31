@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.DoubleAdder;
 
 public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable {
 
@@ -25,14 +25,19 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
     public TraderPortfilio(List<SecurityStatic> securityStaticList) {
         this.securityStaticList=securityStaticList;
         securityStaticList.forEach(securityStatic ->
-                securityPriceMap.put(securityStatic.securityDefinition().getSymbol(), new SecurityPrice(securityStatic.securityDefinition().getSymbol(),0)));
+                securityPriceMap.put(securityStatic.securityDefinition().getSymbol(), new SecurityPrice(securityStatic.securityDefinition().getSymbol(),0,0)));
     }
 
     @Override
     public void processTick(Tick tick) {
         // update price
-        securityStaticList.stream().filter(c -> c.securityDefinition().getRootSymbol().equals(tick.getSymbol())).forEach(securityStatic ->
-                securityPriceMap.put(securityStatic.securityDefinition().getSymbol(), new SecurityPrice(securityStatic.securityDefinition().getSymbol(), securityStatic.priceCalculator().calculatePrice(tick.getPrice(), securityStatic.securityDefinition())))
+        securityStaticList.stream().filter(c ->
+                c.securityDefinition().getRootSymbol().equals(tick.getSymbol())).forEach(securityStatic -> {
+                    double price = securityStatic.priceCalculator().calculatePrice(tick.getPrice(), securityStatic.securityDefinition());
+                    price = Math.floor(price*100)/100;
+                    double value = price * securityStatic.positionSize();
+                    securityPriceMap.put(securityStatic.securityDefinition().getSymbol(),new SecurityPrice(securityStatic.securityDefinition().getSymbol(), price, value));
+                }
         );
     }
 
@@ -77,8 +82,13 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
     }
 
     public PortfilioSnapshot createSnapshot(Tick tick, long number) {
-        Map<String, SecurityPrice> priceMap = securityPriceMap.values().stream().collect(Collectors.toMap(SecurityPrice::getSymbol, securityPrice -> new SecurityPrice(securityPrice.getSymbol(), securityPrice.getPrice())));
-        return new PortfilioSnapshot(number, tick, priceMap, this.securityStaticList);
+        DoubleAdder nav = new DoubleAdder();
+        Map<String, SecurityPrice> priceMap = new ConcurrentHashMap<>();
+        securityPriceMap.values().forEach(securityPrice -> {
+            nav.add(securityPrice.getValue());
+            priceMap.put(securityPrice.getSymbol(), new SecurityPrice(securityPrice.getSymbol(), securityPrice.getPrice(), securityPrice.getValue()));
+        });
+        return new PortfilioSnapshot(number, tick, priceMap, this.securityStaticList, nav.doubleValue());
 
     }
 
@@ -91,9 +101,12 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
     public PortfilioSnapshot createOpenSnapshot(List<Tick> ticks, long number) {
 
         Map<String, SecurityPrice> priceMap = new ConcurrentHashMap<>();
-        securityPriceMap.values().forEach(securityPrice -> priceMap.put(securityPrice.getSymbol(), new SecurityPrice(securityPrice.getSymbol(), securityPrice.getPrice())));
-        return new PortfilioSnapshot(number, ticks, priceMap, this.securityStaticList);
-
+        DoubleAdder nav = new DoubleAdder();
+        securityPriceMap.values().forEach(securityPrice -> {
+                    nav.add(securityPrice.getValue());
+                    priceMap.put(securityPrice.getSymbol(), new SecurityPrice(securityPrice.getSymbol(), securityPrice.getPrice(), securityPrice.getValue()));
+                });
+        return new PortfilioSnapshot(number, ticks, priceMap, this.securityStaticList, nav.doubleValue());
     }
 
     public void sendOpenSnapshot(List<Tick> ticks, long number) {

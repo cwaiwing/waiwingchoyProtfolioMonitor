@@ -13,21 +13,24 @@ public class PortfilioSnapshot implements PrintableObject{
     private final Map<String, SecurityPrice> securityPriceMap;
     private final List<SecurityStatic> securityStaticList;
     private final long number;
+    private final double nav;
 
-    public PortfilioSnapshot(long number, List<Tick> ticks, Map<String, SecurityPrice> securityPriceMap, List<SecurityStatic> securityStaticList) {
+    public PortfilioSnapshot(long number, List<Tick> ticks, Map<String, SecurityPrice> securityPriceMap, List<SecurityStatic> securityStaticList, double nav) {
         this.ticks=ticks;
         this.tick=null;
         this.securityPriceMap=securityPriceMap;
         this.securityStaticList=securityStaticList;
         this.number=number;
+        this.nav=nav;
     }
 
-    public PortfilioSnapshot(long number, Tick tick, Map<String, SecurityPrice> securityPriceMap, List<SecurityStatic> securityStaticList) {
+    public PortfilioSnapshot(long number, Tick tick, Map<String, SecurityPrice> securityPriceMap, List<SecurityStatic> securityStaticList, double nav) {
         this.ticks=null;
         this.tick=tick;
         this.securityPriceMap=securityPriceMap;
         this.securityStaticList=securityStaticList;
         this.number=number;
+        this.nav=nav;
     }
 
     @Override
@@ -46,14 +49,12 @@ public class PortfilioSnapshot implements PrintableObject{
         }
         sb.append("\n## Portfolio\n");
         sb.append(String.format("%-30s %20s %20s %20s%n", "symbol","price","qty","value"));
-        double nav = 0d;
+
         for (SecurityStatic securityStatic : securityStaticList) {
             SecurityPrice price = securityPriceMap.get(securityStatic.securityDefinition().getSymbol());
-            double value = price.getPrice()*securityStatic.positionSize();
-            nav += value;
-            sb.append(String.format("%-30s %,20.2f %,20.2f %,20.2f%n", securityStatic.securityDefinition().getSymbol(),price.getPrice(),Double.valueOf(securityStatic.positionSize()),value));
+            sb.append(String.format("%-30s %,20.2f %,20.2f %,20.2f%n", securityStatic.securityDefinition().getSymbol(),price.getPrice(), (double) securityStatic.positionSize(),price.getValue()));
         }
-        sb.append(String.format("%n#Total portfolio%,77.2f%n%n",nav));
+        sb.append(String.format("%n#Total portfolio%,77.2f%n%n",this.nav));
         return sb.toString();
     }
 }

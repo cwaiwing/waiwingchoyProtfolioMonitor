@@ -29,6 +29,7 @@ public class MarketDataProvider implements Runnable{
         // generate ticks
         double price = open;
         while(true) {
+            price = Math.floor(price*100)/100;
             Tick tick = new Tick(this.symbol, price, cnt.incrementAndGet());
             tickReceivable.receiveTick(tick);
             System.out.println("#"+cnt.get()+" "+this.symbol+" tick is queued");
