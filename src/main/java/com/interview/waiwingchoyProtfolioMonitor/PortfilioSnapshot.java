@@ -40,7 +40,7 @@ public class PortfilioSnapshot implements PrintableObject{
         sb.append("## ").append(number).append(" Market Data Update\n");
         if (ticks==null) {
             assert tick != null;
-            sb.append(String.format("%s %s change to %.2f%n",tick.count,tick.getSymbol(),tick.getPrice()));
+            sb.append(String.format("%s change to %.2f%n",tick.getSymbol(),tick.getPrice()));
         }
         else {
             for (Tick thisTick: ticks) {
