@@ -1,5 +1,5 @@
 package com.interview.waiwingchoyProtfolioMonitor;
-
+// Tick content storage
 public class Tick{
     final String symbol;
     final double price;

@@ -6,7 +6,7 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 
 import java.util.concurrent.ConcurrentHashMap;
-
+// Holding all securities feed provider
 public class MarketDataManager {
     private static MarketDataManager marketDataManager = null;
     private static final Object lock = new Object();

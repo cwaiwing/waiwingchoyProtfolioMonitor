@@ -1,5 +1,5 @@
 package com.interview.waiwingchoyProtfolioMonitor;
-
+// Security variable content storage
 public class SecurityPrice {
     private final double price;
     private final double value;

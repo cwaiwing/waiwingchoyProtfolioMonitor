@@ -1,11 +1,11 @@
 package com.interview.waiwingchoyProtfolioMonitor;
 
-import com.interview.waiwingchoyProtfolioMonitor.bean.SecurityDefinition;
 import com.interview.waiwingchoyProtfolioMonitor.bean.SecurityStatic;
 
 import java.util.List;
 import java.util.Map;
 
+// Portfili snapshort storage
 public class PortfilioSnapshot implements PrintableObject{
 //    private final List<Tick> ticks;
     private final Tick tick;

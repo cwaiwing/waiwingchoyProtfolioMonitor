@@ -24,13 +24,14 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
 
     public TraderPortfilio(List<SecurityStatic> securityStaticList) {
         this.securityStaticList=securityStaticList;
+        // init security variable content
         securityStaticList.forEach(securityStatic ->
                 securityPriceMap.put(securityStatic.securityDefinition().getSymbol(), new SecurityPrice(securityStatic.securityDefinition().getSymbol(),0,0)));
     }
 
     @Override
     public void processTick(Tick tick) {
-        // update price
+        // process tick, realtime cal security price, value and NAV. These variable content are stored in securityPrice.
         securityStaticList.stream().filter(c ->
                 c.securityDefinition().getRootSymbol().equals(tick.getSymbol())).forEach(securityStatic -> {
                     double price = securityStatic.priceCalculator().calculatePrice(tick.getPrice(), securityStatic.securityDefinition());
@@ -44,6 +45,7 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
     @Override
     public void receiveTick(Tick tick) {
         try {
+            // enqueue tick to tick queue.
             tickQueue.put(tick);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -55,6 +57,7 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
         init();
         while (true) {
             try {
+                // dequeue tick from queue > process tick > send snapshot to printer
                 Tick tick = tickQueue.take();
                 processTick(tick);
                 sendSnapshot(tick, tickUpdateCount.incrementAndGet());
@@ -66,6 +69,7 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
 
     // for market open
     public void init() {
+        // handle the first tick for all securities base on the given screenshot.
         List<Tick> ticks = new CopyOnWriteArrayList<>();
         for (SecurityStatic securityStatic : securityStaticList) {
             if (securityStatic.securityDefinition().getRootSymbol().equals(securityStatic.securityDefinition().getSymbol())) {

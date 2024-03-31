@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 @Component
@@ -30,7 +31,6 @@ public class WaiwingchoyProtfolioMonitorApplication implements CommandLineRunner
 	}
 	@Override
 	public void run(String[] args) throws Exception {
-		System.out.println(args);
 		if (args.length==0) {
 			System.out.println("no portfolio file in the argument");
 			System.exit(0);
@@ -38,21 +38,17 @@ public class WaiwingchoyProtfolioMonitorApplication implements CommandLineRunner
 
 		MarketDataManager marketDataManager = MarketDataManager.getInstance();
 		System.out.println("load file ... "+args[0]);
-		// read position file
-//		ConcurrentHashMap<String,SecurityStatic> securityStaticMap = SecuritiesUtils.loadSecurityStaticFromCVSAndDefinition(args[0], securityDefinitionRepository);
+		// read position file and read static content from db, transform them to SecurityStatic
 		List<SecurityStatic> securityStaticList = SecuritiesUtils.loadSecurityStaticFromCVSAndDefinitionToList(args[0], securityDefinitionRepository);
 		TraderPortfilio traderPortfilio = new TraderPortfilio(securityStaticList);
 
-		List<String> subSymbol = new CopyOnWriteArrayList<>();
-		for (SecurityStatic securityStatic : securityStaticList) {
-			String rootSymbol = securityStatic.securityDefinition().getRootSymbol();
-			if (!subSymbol.contains(rootSymbol)) {
-				subSymbol.add(rootSymbol);
-				SecurityDefinition securityDefinition = securityDefinitionRepository.findBySymbol(rootSymbol);
-				marketDataManager.subscribeMarketData(rootSymbol, traderPortfilio, securityDefinition);
-			}
-		}
+		// Distinct root symbol from security static and do market data subscription.
+		securityStaticList.stream().map(s->s.securityDefinition().getRootSymbol()).toList().stream().distinct().forEach(s -> {
+			SecurityDefinition securityDefinition = securityDefinitionRepository.findBySymbol(s);
+			marketDataManager.subscribeMarketData(securityDefinition.getSymbol(), traderPortfilio, securityDefinition);
+		});
 
+		// register PortfilioPrinter to portfilio runnable.
 		traderPortfilio.registerPortfilioPrinterRunner(PortfilioPrinterListener.getInstance());
 
 		new SimpleAsyncTaskExecutor().execute(traderPortfilio);

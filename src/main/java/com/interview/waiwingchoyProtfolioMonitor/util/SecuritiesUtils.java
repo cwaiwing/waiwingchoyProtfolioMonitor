@@ -13,7 +13,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SecuritiesUtils {
@@ -53,7 +52,6 @@ public class SecuritiesUtils {
 
     private static PriceCalculator getPriceCalculator(SecurityDefinition securityDefinition) {
         PriceCalculator priceCalculator = null;
-        System.out.println(securityDefinition.getType());
         if (securityDefinition.getType().equals(SecurityType.STOCK)) {
             System.out.println("Assign SimpleCal to "+securityDefinition.getSymbol());
             priceCalculator = new SimplePriceCalculator();
