@@ -1,10 +1,13 @@
 package com.interview.waiwingchoyProtfolioMonitor.calculator;
 
+import com.interview.waiwingchoyProtfolioMonitor.BlackScholesCache;
 import com.interview.waiwingchoyProtfolioMonitor.bean.SecurityDefinition;
 
 public abstract class PriceCalculator {
 
     public abstract double calculatePrice(double price, SecurityDefinition securityDefinition);
+    public abstract double calByCache(double price, BlackScholesCache cache) ;
+
     protected double N(double x) {
         int neg = (x < 0d) ? 1 : 0;
         if ( neg == 1)

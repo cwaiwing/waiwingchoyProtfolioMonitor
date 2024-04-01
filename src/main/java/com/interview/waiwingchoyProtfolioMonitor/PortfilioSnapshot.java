@@ -41,18 +41,20 @@ public class PortfilioSnapshot implements PrintableObject{
         if (ticks==null) {
             assert tick != null;
             sb.append(String.format("%s change to %.2f%n",tick.getSymbol(),tick.getPrice()));
+//            sb.append(String.format("%s %s change to %.2f%n",tick.count, tick.getSymbol(),tick.getPrice()));
         }
         else {
             for (Tick thisTick: ticks) {
-                sb.append(String.format("%s %s change to %.2f%n",thisTick.count, thisTick.getSymbol(),thisTick.getPrice()));
+                sb.append(String.format("%s change to %.2f%n", thisTick.getSymbol(),thisTick.getPrice()));
+//                sb.append(String.format("%s %s change to %.2f%n",thisTick.count, thisTick.getSymbol(),thisTick.getPrice()));
             }
         }
         sb.append("\n## Portfolio\n");
         sb.append(String.format("%-30s %20s %20s %20s%n", "symbol","price","qty","value"));
 
         for (SecurityStatic securityStatic : securityStaticList) {
-            SecurityPrice price = securityPriceMap.get(securityStatic.securityDefinition().getSymbol());
-            sb.append(String.format("%-30s %,20.2f %,20.2f %,20.2f%n", securityStatic.securityDefinition().getSymbol(),price.getPrice(), (double) securityStatic.positionSize(),price.getValue()));
+            SecurityPrice price = securityPriceMap.get(securityStatic.symbol());
+            sb.append(String.format("%-30s %,20.2f %,20.2f %,20.2f%n", securityStatic.symbol(),price.getPrice(), (double) securityStatic.positionSize(),price.getValue()));
         }
         sb.append(String.format("%n#Total portfolio%,77.2f%n%n",this.nav));
         return sb.toString();

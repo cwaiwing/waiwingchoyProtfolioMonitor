@@ -1,5 +1,6 @@
 package com.interview.waiwingchoyProtfolioMonitor.util;
 
+import com.interview.waiwingchoyProtfolioMonitor.UniversialCache;
 import com.interview.waiwingchoyProtfolioMonitor.bean.SecurityDefinition;
 import com.interview.waiwingchoyProtfolioMonitor.bean.SecurityStatic;
 import com.interview.waiwingchoyProtfolioMonitor.calculator.CallOptionPriceCalculator;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SecuritiesUtils {
-    public static List<SecurityStatic> loadSecurityStaticFromCVSAndDefinitionToList(String filePath, SecurityDefinitionRepository securityDefinitionRepository) {
+    public static List<SecurityStatic> loadSecurityStaticFromCVSAndDefinitionToList(String filePath, UniversialCache universialCache, SecurityDefinitionRepository securityDefinitionRepository) {
         BufferedReader reader;
         List<SecurityStatic> ret = new CopyOnWriteArrayList<>();
         try {
@@ -34,7 +35,11 @@ public class SecuritiesUtils {
                         System.exit(1);
                     }
                     PriceCalculator priceCalculator = getPriceCalculator(securityDefinition);
-                    ret.add(new SecurityStatic(securityDefinition, priceCalculator, Integer.parseInt(positionSize)));
+                    SecurityStatic securityStatic = new SecurityStatic(symbol, Integer.parseInt(positionSize));
+                    ret.add(securityStatic);
+//                    universialCache.setSecurityStatic(symbol, securityStatic);
+                    universialCache.setPriceCalculator(symbol, priceCalculator);
+                    universialCache.setSecurityDefinition(symbol, securityDefinition);
                 }
                 line = reader.readLine();
             }

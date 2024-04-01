@@ -13,8 +13,6 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 @SpringBootApplication
 @Component
@@ -37,15 +35,23 @@ public class WaiwingchoyProtfolioMonitorApplication implements CommandLineRunner
 		}
 
 		MarketDataManager marketDataManager = MarketDataManager.getInstance();
+		UniversialCache universe = UniversialCache.getInstance();
 		System.out.println("load file ... "+args[0]);
 		// read position file and read static content from db, transform them to SecurityStatic
-		List<SecurityStatic> securityStaticList = SecuritiesUtils.loadSecurityStaticFromCVSAndDefinitionToList(args[0], securityDefinitionRepository);
+		List<SecurityStatic> securityStaticList = SecuritiesUtils.loadSecurityStaticFromCVSAndDefinitionToList(args[0], universe, securityDefinitionRepository);
+
 		TraderPortfilio traderPortfilio = new TraderPortfilio(securityStaticList);
 
 		// Distinct root symbol from security static and do market data subscription.
-		securityStaticList.stream().map(s->s.securityDefinition().getRootSymbol()).toList().stream().distinct().forEach(s -> {
+		securityStaticList.stream().map(s->universe.getSecurityDefinition(s.symbol()).getRootSymbol()).toList().stream().distinct().forEach(s -> {
+			//the universe security definition only has symbol which is in portfolio, somehow root symbol may not be in portfolio, so need to retrieve record.
 			SecurityDefinition securityDefinition = securityDefinitionRepository.findBySymbol(s);
+			System.out.println("Subscribe ... "+securityDefinition.getSymbol());
 			marketDataManager.subscribeMarketData(securityDefinition.getSymbol(), traderPortfilio, securityDefinition);
+
+			System.out.println("set BlackScholesCache ... "+securityDefinition.getSymbol());
+			BlackScholesCache blackScholesCache = new BlackScholesCache(securityDefinition);
+			universe.setBlackScholesCache(securityDefinition.getSymbol(), blackScholesCache);
 		});
 
 		// register PortfilioPrinter to portfilio runnable.

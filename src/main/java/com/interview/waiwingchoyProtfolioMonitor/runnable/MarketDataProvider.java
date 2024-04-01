@@ -36,7 +36,7 @@ public class MarketDataProvider implements Runnable{
             double waitTime = minWaitSec + Math.random()*(maxWaitSec-minWaitSec);
             price = getNextPrice(price, waitTime);
             try {
-                int wait = (int)(waitTime*10);
+                int wait = (int)(waitTime*1000);
                 Thread.sleep(wait);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);

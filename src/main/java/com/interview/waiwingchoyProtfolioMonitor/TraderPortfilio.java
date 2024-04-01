@@ -21,25 +21,27 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
     private final BlockingQueue<Tick> tickQueue = new LinkedBlockingQueue<>();
     private PortfilioPrinterListener portfilioPrinterListener = null;
     private final AtomicLong tickUpdateCount = new AtomicLong(0);
+    private final UniversialCache universialCache = UniversialCache.getInstance();
 
     public TraderPortfilio(List<SecurityStatic> securityStaticList) {
         this.securityStaticList=securityStaticList;
         // init security variable content
-        securityStaticList.forEach(securityStatic ->
-                securityPriceMap.put(securityStatic.securityDefinition().getSymbol(), new SecurityPrice(securityStatic.securityDefinition().getSymbol(),0,0)));
+        securityStaticList.forEach(securityStatic -> {
+                securityPriceMap.put(securityStatic.symbol(), new SecurityPrice(securityStatic.symbol(),0,0));
+        });
     }
 
     @Override
     public void processTick(Tick tick) {
         // process tick, realtime cal security price, value and NAV. These variable content are stored in securityPrice.
-        securityStaticList.stream().filter(c ->
-                c.securityDefinition().getRootSymbol().equals(tick.getSymbol())).forEach(securityStatic -> {
-                    double price = securityStatic.priceCalculator().calculatePrice(tick.getPrice(), securityStatic.securityDefinition());
-                    price = Math.floor(price*100)/100;
-                    double value = price * securityStatic.positionSize();
-                    securityPriceMap.put(securityStatic.securityDefinition().getSymbol(),new SecurityPrice(securityStatic.securityDefinition().getSymbol(), price, value));
-                }
-        );
+        BlackScholesCache cache = universialCache.getBlackScholesCache(tick.getSymbol());
+        for (SecurityStatic securityStatic : securityStaticList) {
+            if (universialCache.getSecurityDefinition(securityStatic.symbol()).getRootSymbol().equals(tick.getSymbol())) {
+                double price = universialCache.getPriceCalculator(securityStatic.symbol()).calByCache(tick.getPrice(), cache);
+                double value = price * securityStatic.positionSize();
+                securityPriceMap.put(securityStatic.symbol(),new SecurityPrice(securityStatic.symbol(), price, value));
+            }
+        }
     }
 
     @Override
@@ -72,8 +74,8 @@ public class TraderPortfilio implements TickProcessable, TickReceivable,Runnable
         // handle the first tick for all securities base on the given screenshot.
         List<Tick> ticks = new CopyOnWriteArrayList<>();
         for (SecurityStatic securityStatic : securityStaticList) {
-            if (securityStatic.securityDefinition().getRootSymbol().equals(securityStatic.securityDefinition().getSymbol())) {
-                Tick tick = new Tick(securityStatic.securityDefinition().getSymbol(), securityStatic.securityDefinition().getOpen(), 0);
+            if (universialCache.getSecurityDefinition(securityStatic.symbol()).getRootSymbol().equals(securityStatic.symbol())) {
+                Tick tick = new Tick(securityStatic.symbol(), universialCache.getSecurityDefinition(securityStatic.symbol()).getOpen(), 0);
                 processTick(tick);
                 ticks.add(tick);
             }
